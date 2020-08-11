@@ -38,7 +38,10 @@
 ( (DIRECTIVE 'data') (NUMBER -100) )
 ( (LABELDEF 'K') (DIRECTIVE 'data') (NUMBER 31) )
 ( (DIRECTIVE 'extern') (LABELREF 'L3') )
+```
 
 #### 2nd Milestone
 
-( (MAIN 0 CODE) (LOOP 0 CODE) (END 0 CODE) (STR 0 DATA) (LIST 0 DATA) (K 0 DATA) )
+```scheme
+( ('MAIN' 0 CODE) ('LOOP' 0 CODE) ('END' 0 CODE) ('STR' 0 DATA) ('LIST' 0 DATA) ('K' 0 DATA) )
+```

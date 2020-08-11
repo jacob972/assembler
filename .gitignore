@@ -53,3 +53,5 @@ dkms.conf
 /.vs
 *.user
 /x64/Debug
+output/actual.scm
+output/expected.scm

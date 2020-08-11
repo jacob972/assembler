@@ -2,27 +2,29 @@
 #include <stdio.h>
 #include <stdlib.h> // for malloc
 
+static Node *head = NULL;
+
 void symbolInsert(const char *name, int value, SymbolAttributes attr)
 {
-	  Node *temp= (Node*) malloc(sizeof(Node));
+	Node *temp = (Node *)malloc(sizeof(Node));
 	if (!temp) {
 		printf("the memory is full");
 		exit(0);
-		
+
 	}
 	strcpy(temp->name, name);
 	temp->value = value;
 	temp->attr = attr;
-	temp->link=NULL;
+	temp->next = NULL;
 	if (!head)
 		head = temp;
 	else {
-		temp->link= head;
+		temp->next = head;
 		head = temp;
 		/// Node *current = head;
-		//while (current->link)
-			//current = current->link;
-		//temp = current->link;
+		//while (current->next)
+			//current = current->next;
+		//temp = current->next;
 	}
 
 
@@ -38,10 +40,11 @@ void symbolLookup(const char *name, int *value, SymbolAttributes *attr)
 
 void printSymbolTable()
 {
-	Node *temp1=head;
-	while (temp1) {
-		printf("(%s %d %d)\t",temp1->name, temp1->value, temp1->attr);
-		temp1 = temp1->link;
-
+	Node *node = head;
+	printf("( ");
+	while (node) {
+		printf("('%s' %d %d) ", node->name, node->value, node->attr);
+		node = node->next;
 	}
+	printf(")\n");
 }
