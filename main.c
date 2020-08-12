@@ -46,7 +46,7 @@ void printTokenList(const char line[])
     }
     printf(")\n");
 }
-
+int IC=0, DC=0;
 int main(int argc, char *argv[]) {
     for (int i = 1; i < argc; i++) {
         FILE *pFile;
@@ -66,18 +66,28 @@ int main(int argc, char *argv[]) {
                 Token token;
                 const char *p = line;
                 p += gettoken(p, &token);
+                if (token.type == DIRECTIVE) {
+                   Token token2;
+                   gettoken(p, &token2);
+                   if (0 == strcmp("entry", token.string))
+                       symbolInsert(token2.string, 0, ATTR_ENTRY);
+                   
+                   else if(0 == strcmp("extern", token.string))
+                       symbolInsert(token2.string, 0, ATTR_EXTERNAL);
+                }
 
-                if (token.type == LABELDEF) {
+                else if (token.type == LABELDEF) {
                     Token token2;
                     gettoken(p, &token2);
                     if (token2.type == INSTRUCTION) {
                         // TODO Fill in label address
                         symbolInsert(token.string, 0, ATTR_CODE);
                     }
-                    else if (token2.type == DIRECTIVE && 0 == strcmp("data", token2.string)) {
+                    else if (token2.type == DIRECTIVE && 0 == strcmp("data", token2.string)|| 0 == strcmp("string", token2.string)) {
                         // TODO Fill in label address
                         symbolInsert(token.string, 0, ATTR_DATA);
                     }
+
                 }
 
                 printf("%03d: ", ++linenum);
