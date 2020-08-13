@@ -4,21 +4,21 @@
 
 void symbolInsert(const char *name, int value, SymbolAttributes attr)
 {
-	  Node *temp= (Node*) malloc(sizeof(Node));
-	if (!temp) {
+	Node *symbol = (Node *)malloc(sizeof(Node));
+	if (!symbol) {
 		printf("the memory is full");
 		exit(0);
-		
+
 	}
-	strcpy(temp->name, name);
-	temp->value = value;
-	temp->attr = attr;
-	temp->link=NULL;
+	strcpy(symbol->name, name);
+	symbol->value = value;
+	symbol->attr = attr;
+	symbol->link = NULL;
 	if (!head)
-		head = temp;
+		head = symbol;
 	else {
-		temp->link= head;
-		head = temp;
+		symbol->link = head;
+		head = symbol;
 		/// Node *current = head;
 		//while (current->link)
 			//current = current->link;
@@ -30,27 +30,27 @@ void symbolInsert(const char *name, int value, SymbolAttributes attr)
 
 void symbolUpdate(const char *name, int value, SymbolAttributes attr)
 {
-	Node *temp = head;
-	while (temp) {
-		if (0==strcmp(temp->name, name)){
-			 temp->value= value;
-			 temp->attr= attr;
+	Node *symbol = head;
+	while (symbol) {
+		if (0 == strcmp(symbol->name, name)) {
+			symbol->value = value;
+			symbol->attr = attr;
 		}
-		temp = temp->link;
-		
+		symbol = symbol->link;
+
 	}
 }
 
 int symbolLookup(const char *name, int *value, SymbolAttributes *attr)
 {
-	Node *temp = head;
-	while (temp) {
-		if (0==strcmp(temp->name, name)) {
-			 *value= temp->value;
-			 *attr= temp->attr;
+	Node *symbol = head;
+	while (symbol) {
+		if (0 == strcmp(symbol->name, name)) {
+			*value = symbol->value;
+			*attr = symbol->attr;
 			return 1;
 		}
-		temp = temp->link;
+		symbol = symbol->link;
 	}
 	return 0;
 }
@@ -58,10 +58,11 @@ int symbolLookup(const char *name, int *value, SymbolAttributes *attr)
 
 void printSymbolTable()
 {
-	Node *temp1=head;
-	while (temp1) {
-		printf("(%s %d %d)\t",temp1->name, temp1->value, temp1->attr);
-		temp1 = temp1->link;
-
+	Node *symbol = head;
+	printf("( ");
+	while (symbol) {
+		printf("(%s %d %d) ", symbol->name, symbol->value, symbol->attr);
+		symbol = symbol->link;
 	}
+	printf(")\n");
 }
