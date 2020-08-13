@@ -19,6 +19,6 @@ typedef struct Node Node;
 
 void symbolInsert(const char *name, int value, SymbolAttributes attr);
 void symbolUpdate(const char *name, int value, SymbolAttributes attr);
-void symbolLookup(const char *name, int *value, SymbolAttributes *attr);
+int symbolLookup(const char *name, int *value, SymbolAttributes *attr);
 void printSymbolTable();
 

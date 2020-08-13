@@ -30,11 +30,31 @@ void symbolInsert(const char *name, int value, SymbolAttributes attr)
 
 void symbolUpdate(const char *name, int value, SymbolAttributes attr)
 {
+	Node *temp = head;
+	while (temp) {
+		if (0==strcmp(temp->name, name)){
+			 temp->value= value;
+			 temp->attr= attr;
+		}
+		temp = temp->link;
+		
+	}
 }
 
-void symbolLookup(const char *name, int *value, SymbolAttributes *attr)
+int symbolLookup(const char *name, int *value, SymbolAttributes *attr)
 {
+	Node *temp = head;
+	while (temp) {
+		if (0==strcmp(temp->name, name)) {
+			 *value= temp->value;
+			 *attr= temp->attr;
+			return 1;
+		}
+		temp = temp->link;
+	}
+	return 0;
 }
+
 
 void printSymbolTable()
 {
