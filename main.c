@@ -47,49 +47,61 @@ void printTokenList(char line[])
             printf("(%s '%s') ", token._typename, token.string);
             break;
         }
+    }
+    printf(")\n");
+}
+
+void ProcessLine(char line[], int pass)
+{
+    int tokenLength;
+    Token token;
+    const char *p = line;
+    for (char *p = line; 0 < (tokenLength = gettoken(p, &token)); p += tokenLength) {
         if (token.type == INSTRUCTION) {
             if (icCount(token) == 0)
                 ic++;
+
             else if (icCount(token) == 1) {
                 Token token2; char *p1 = p;
                 p1 += tokenLength;
                 p1 += gettoken(p1, &token2);
                 while (token2.type == COMMA)
                     p1 += gettoken(p1, &token2);
-                if (token2.type == IMMEDIATE || token2.type == LABELREF|| token2.type == RELATIVE)
+                if (token2.type == IMMEDIATE || token2.type == LABELREF || token2.type == RELATIVE)
                     ic += 2;
                 else
                     ic++;
             }
             else if (icCount(token) == 2) {
-                ic ++; int i = 2;
-                    Token token2; char *p1 = p;
-                    p1 += tokenLength;
-                    while (i) {
+                ic++; int i = 2;
+                Token token2; char *p1 = p;
+                p1 += tokenLength;
+                while (i) {
                     p1 += gettoken(p1, &token2);
                     while (token2.type == COMMA)
                         p1 += gettoken(p1, &token2);
-                    if (token2.type == IMMEDIATE || token2.type == LABELREF|| token2.type == RELATIVE)
+                    if (token2.type == IMMEDIATE || token2.type == LABELREF || token2.type == RELATIVE)
                         ic++;
                     i--;
                 }
 
             }
         }
-                   
+
         if (token.type == DIRECTIVE) {
             if (0 == strcmp("string", token.string) || 0 == strcmp("data", token.string)) {
                 Token token2; char *p1 = p;
                 p1 += tokenLength;
                 p1 += gettoken(p1, &token2);
-              
+
                 while (token2.type == NUMBER) {
-                    dc++;
+                    data[dc++] = token2.number;
                     p1 += gettoken(p1, &token2);
+
                     while (token2.type == COMMA)
                         p1 += gettoken(p1, &token2);
-               }
-            
+                }
+
                 while (token2.type == STRING) {
                     int k;
                     for (k = 0; k < strlen(token2.string); k++) {
@@ -102,15 +114,8 @@ void printTokenList(char line[])
                         p1 += gettoken(p1, &token2);
                 }
             }
-       }
+        }
     }
-    printf(")\n");
-}
-
-void ProcessLinePass1(char line[])
-{
-    Token token;
-    const char *p = line;
     p += gettoken(p, &token);
     if (token.type == DIRECTIVE) {
         Token token2;
@@ -142,11 +147,8 @@ void ProcessLinePass1(char line[])
     }
 }
 
-void ProcessLinePass2(char line[]) {
-
-}
-
 int main(int argc, char *argv[]) {
+
     for (int i = 1; i < argc; i++) {
         FILE *pFile;
         char fileName[100];
@@ -157,30 +159,26 @@ int main(int argc, char *argv[]) {
             exit(ENOENT);
         }
         else {
-            int linenum = 0;
-            char line[1000];
-            
             for (int pass = 0; pass < 2; pass++)
             {
+                int linenum = 0;
+                char line[1000];
+
+                ic = 100; dc = 0;
+
                 fseek(pFile, 0, SEEK_SET);
 
                 while (fgets(line, 1000, pFile)) {
 
-                    if (pass == 0) {
-                        ProcessLinePass1(line);
-                    }
-                    else {
-                        ProcessLinePass2(line);
-                    }
-
-                    printf("%03d: [IC: %03d, DC: %03d] ", ++linenum, ic, dc);
+                    if (pass == 1) printf("%03d: [IC: %03d, DC: %03d] %s", ++linenum, ic, dc, line);
 
                     if (line[0] == ';') {
-                        printf("%s", line);
                         continue;
                     }
 
-                    printTokenList(line);
+                    ProcessLine(line, pass);
+
+                    //printTokenList(line);
                 }
             }
 
