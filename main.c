@@ -3,13 +3,14 @@
 #include <string.h>
 #include "gettoken.h"
 #include "symbol.h"
+int IC = 100, DC = 0;
 
-void printTokenList(const char line[])
+void printTokenList( char line[])
 {
     Token token;
     int tokenLength;
     printf("( ");
-    for (const char *p = line; 0 < (tokenLength = gettoken(p, &token)); p += tokenLength) {
+    for ( char *p = line; 0 < (tokenLength = gettoken(p, &token)); p += tokenLength) {
         switch (token.type) {
         case DIRECTIVE:
             printf("(%s '%s') ", token._typename, token.string);
@@ -43,10 +44,62 @@ void printTokenList(const char line[])
             printf("(%s '%s') ", token._typename, token.string);
             break;
         }
+        if (token.type == INSTRUCTION) {
+            if (icCount(token) == 0)
+                IC++;
+            else if (icCount(token) == 1) {
+                Token token2; char *p1 = p;
+                p1 += tokenLength;
+                p1 += gettoken(p1, &token2);
+                while (token2.type == COMMA)
+                    p1 += gettoken(p1, &token2);
+                if (token2.type == IMMEDIATE || token2.type == LABELREF|| token2.type == RELATIVE)
+                    IC += 2;
+                else
+                    IC++;
+            }
+            else if (icCount(token) == 2) {
+                IC ++; int i = 2;
+                    Token token2; char *p1 = p;
+                    p1 += tokenLength;
+                    while (i) {
+                    p1 += gettoken(p1, &token2);
+                    while (token2.type == COMMA)
+                        p1 += gettoken(p1, &token2);
+                    if (token2.type == IMMEDIATE || token2.type == LABELREF|| token2.type == RELATIVE)
+                        IC++;
+                    i--;
+                }
+
+            }
+        }
+                   
+        if (token.type == DIRECTIVE) {
+            if (0 == strcmp("string", token.string) || 0 == strcmp("data", token.string)) {
+                Token token2; char *p1 = p;
+                p1 += tokenLength;
+                p1 += gettoken(p1, &token2);
+              
+                while (token2.type == NUMBER) {
+                    DC++;
+                    p1 += gettoken(p1, &token2);
+                    while (token2.type == COMMA)
+                        p1 += gettoken(p1, &token2);
+               }
+            
+                while (token2.type == STRING) {
+                    DC += strlen(token2.string )+1;
+                    p1 += gettoken(p1, &token2);
+                    while (token2.type == COMMA)
+                        p1 += gettoken(p1, &token2);
+                }
+            }
+       }
     }
     printf(")\n");
 }
-int IC=0, DC=0;
+
+
 int main(int argc, char *argv[]) {
     for (int i = 1; i < argc; i++) {
         FILE *pFile;
@@ -62,10 +115,19 @@ int main(int argc, char *argv[]) {
             char line[1000];
             
             while (fgets(line, 1000, pFile)) {
-
                 Token token;
                 const char *p = line;
                 p += gettoken(p, &token);
+                //if (token.type == INSTRUCTION) {
+                   // IC++;
+                  //  Token token2, token3;
+                   // gettoken(p, &token2);
+                 //   gettoken(p, &token3);
+                 //   if (token2.type== LABELREF|| token2.type == IMMEDIATE)
+                    //    IC++;
+                    //if (token3.type == LABELREF || token3.type == IMMEDIATE)
+                  //      IC++;
+                //}
                 if (token.type == DIRECTIVE) {
                    Token token2;
                    gettoken(p, &token2);
@@ -74,7 +136,10 @@ int main(int argc, char *argv[]) {
                    
                    else if(0 == strcmp("extern", token.string))
                        symbolInsert(token2.string, 0, ATTR_EXTERNAL);
+
                 }
+                
+                
 
                 else if (token.type == LABELDEF) {
                     Token token2;
@@ -90,7 +155,7 @@ int main(int argc, char *argv[]) {
 
                 }
 
-                printf("%03d: ", ++linenum);
+                printf("%03d: [IC: %03d, DC: %03d] ", ++linenum, IC, DC);
 
                 if (line[0] == ';') {
                     printf("%s", line);
