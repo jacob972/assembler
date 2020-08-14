@@ -79,7 +79,7 @@ unsigned int getOpcodeAndFunct(const char *instruction) {
 	int i;
 	for (i = 0; i < 16; i++) {
 		if (0 == strcmp(instructions[i].name, instruction))
-			return (instructions[i].opcode<<18)| (instructions[i].funct) << 3;
+			return (instructions[i].opcode << 18) | (instructions[i].funct << 3) | 4;
 	}
 	return -1;
 }
@@ -138,34 +138,43 @@ void processLine(char line[], int pass)
 
 	}
 	else if (token.type == INSTRUCTION) {
+		int nwords = 1, i;
+
 		code[ic - 100] = getOpcodeAndFunct(token.string);
 
 		if (pass == 1) printf("%07d %08o\n", ic, code[ic - 100]);
-		if (icCount(token) == 0)
-			ic++;
-		else if (icCount(token) == 1) {
+
+		if (icCount(token) == 1) {
 			Token token2;
 			p += gettoken(p, &token2);
-			while (token2.type == COMMA)
-				p += gettoken(p, &token2);
-			if (token2.type == IMMEDIATE || token2.type == LABELREF || token2.type == RELATIVE)
-				ic += 2;
-			else
-				ic++;
+			if (token2.type == IMMEDIATE) {
+				code[nwords] = (token2.number << 3)|4;
+				nwords++;
+			}  
+			if (token2.type == LABELREF) {
+			}  
+			if (token2.type == RELATIVE) {
+			}
 		}
 		else if (icCount(token) == 2) {
-			ic++; int i = 2;
+			int i = 2;
 			Token token2;
 			while (i) {
 				p += gettoken(p, &token2);
 				while (token2.type == COMMA)
 					p += gettoken(p, &token2);
-				if (token2.type == IMMEDIATE || token2.type == LABELREF || token2.type == RELATIVE)
-					ic++;
 				i--;
 			}
 
 		}
+
+		if (pass == 1) {
+			for (i = 1; i < nwords; i++) {
+				printf("%07d %08o\n", ic + i, code[ic + i - 100]);
+			}
+		}
+
+		ic += nwords;
 	}
 
 }
