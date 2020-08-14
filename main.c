@@ -5,7 +5,7 @@
 #include "symbol.h"
 
 int ic = 0, dc = 0, icf, dcf;
-int code[1000];
+unsigned int code[1000];
 int data[1000];
 
 void printTokenList(char line[])
@@ -51,7 +51,40 @@ void printTokenList(char line[])
 	printf(")\n");
 }
 
-void ProcessLine(char line[], int pass)
+static struct {
+	char name[5];
+	int opcode;
+	int funct;
+} instructions[] = {
+	//0 mov
+	{.name = "mov", .opcode = 0 },
+	{.name = "cmp", .opcode = 1},
+	{.name = "add", .opcode = 2, .funct = 1},
+	{.name = "sub", .opcode = 2, .funct = 2},
+	{.name = "lea", .opcode = 4},
+	{.name = "clr", .opcode = 5,.funct = 1},
+	{.name = "not", .opcode = 5,.funct = 2},
+	{.name = "inc", .opcode = 5,.funct = 3},
+	{.name = "dec", .opcode = 5,.funct = 4},
+	{.name = "jmp", .opcode = 9,.funct = 1},
+	{.name = "bne", .opcode = 9,.funct = 2},
+	{.name = "jsr", .opcode = 9,.funct = 3},
+	{.name = "red", .opcode = 12},
+	{.name = "prn", .opcode = 13},
+	{.name = "rts", .opcode = 14},
+	{.name = "stop", .opcode = 15},
+};
+
+unsigned int getOpcodeAndFunct(const char *instruction) {
+	int i;
+	for (i = 0; i < 16; i++) {
+		if (0 == strcmp(instructions[i].name, instruction))
+			return (instructions[i].opcode<<18)| (instructions[i].funct) << 3;
+	}
+	return -1;
+}
+
+void processLine(char line[], int pass)
 {
 	char *p = line;
 	Token token;
@@ -68,14 +101,30 @@ void ProcessLine(char line[], int pass)
 		}
 	}
 
-	// token is either INSTRUCTION or DIRECTIVE.
-
 	if (token.type == DIRECTIVE) {
 		if (0 == strcmp("string", token.string)) {
-			// TODO: Handle .string directive.
+			Token token2;
+			p += gettoken(p, &token2);
+			int k;
+			for (k = 0; k < strlen(token2.string); k++) {
+				data[dc++] = token2.string[k];
+			}
+			data[dc++] = 0;
+			p += gettoken(p, &token2);
+			while (token2.type == COMMA)
+				p += gettoken(p, &token2);
+
 		}
 		else if (0 == strcmp("data", token.string)) {
-			// TODO: Handle .data directive.
+			Token token2;
+			p += gettoken(p, &token2);
+			while (token2.type == NUMBER) {
+				data[dc++] = token2.number & 0xFFFFFF;
+				p += gettoken(p, &token2);
+
+				while (token2.type == COMMA)
+					p += gettoken(p, &token2);
+			}
 		}
 		else if (0 == strcmp("entry", token.string)) {
 			// TODO: Handle .entry directive.
@@ -86,38 +135,16 @@ void ProcessLine(char line[], int pass)
 		else {
 			// TODO: Error: unknown directive.
 		}
-			if (0 == strcmp("string", token.string) || 0 == strcmp("data", token.string)) {
-			Token token2;
-			p += gettoken(p, &token2);;
-			p += gettoken(p, &token2);
 
-			while (token2.type == NUMBER) {
-				data[dc++] = token2.number;
-				p += gettoken(p, &token2);
-
-				while (token2.type == COMMA)
-					p += gettoken(p, &token2);
-			}
-
-			while (token2.type == STRING) {
-				int k;
-				for (k = 0; k < strlen(token2.string); k++) {
-					data[dc++] = token2.string[k];
-				}
-				data[dc++] = 0;
-				//dc += strlen(token2.string )+1;
-				p += gettoken(p, &token2);
-				while (token2.type == COMMA)
-					p += gettoken(p, &token2);
-			}
-		}
 	}
 	else if (token.type == INSTRUCTION) {
+		code[ic - 100] = getOpcodeAndFunct(token.string);
+
+		if (pass == 1) printf("%07d %08o\n", ic, code[ic - 100]);
 		if (icCount(token) == 0)
 			ic++;
 		else if (icCount(token) == 1) {
 			Token token2;
-			p += gettoken(p, &token2);
 			p += gettoken(p, &token2);
 			while (token2.type == COMMA)
 				p += gettoken(p, &token2);
@@ -129,7 +156,6 @@ void ProcessLine(char line[], int pass)
 		else if (icCount(token) == 2) {
 			ic++; int i = 2;
 			Token token2;
-			p += gettoken(p, &token2);;
 			while (i) {
 				p += gettoken(p, &token2);
 				while (token2.type == COMMA)
@@ -138,25 +164,10 @@ void ProcessLine(char line[], int pass)
 					ic++;
 				i--;
 			}
+
 		}
 	}
-	//p += gettoken(p, &token);
-	//if (token.type == DIRECTIVE) {
-	//	Token token2;
-	//	gettoken(p, &token2);
-	//	if (0 == strcmp("entry", token.string)) {
-	//		int value;
-	//		SymbolAttributes attr;
-	//		if (symbolLookup(token2.string, &value, &attr)) {
-	//			symbolUpdate(token2.string, dc, attr | ATTR_ENTRY);
-	//		}
-	//		else {
-	//			symbolInsert(token2.string, dc, ATTR_ENTRY);
-	//		}
-	//	}
-	//	else if (0 == strcmp("extern", token.string))
-	//		symbolInsert(token2.string, dc, ATTR_EXTERNAL);
-	//}
+
 }
 
 int main(int argc, char *argv[]) {
@@ -188,7 +199,7 @@ int main(int argc, char *argv[]) {
 						continue;
 					}
 
-					ProcessLine(line, pass);
+					processLine(line, pass);
 
 					//printTokenList(line);
 				}
@@ -196,11 +207,18 @@ int main(int argc, char *argv[]) {
 
 			icf = ic;
 			dcf = dc;
-			printf("------\n");
-			printf("ICF: %d, DCF: %d\n", icf, dcf);
 
 			printf("------ Symbols ------\n");
 			printSymbolTable();
+
+			printf("------ Object Code ------\n");
+			printf("%7d %d\n", icf, dcf);
+			for (ic = 100; ic < icf; ic++) {
+				printf("%07d %06x\n", ic, code[ic - 100]);
+			}
+			for (dc = 0; dc < dcf; dc++) {
+				printf("%07d %06x\n", icf + dc, data[dc]);
+			}
 
 			fclose(pFile);
 		}
