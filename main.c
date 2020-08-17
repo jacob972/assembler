@@ -92,12 +92,15 @@ void processLine(char line[], int pass)
 	p += gettoken(p, &token);
 
 	if (token.type == LABELDEF) {
-		p += gettoken(p, &token);
-		if (token.type == INSTRUCTION) {
+		Token token2;
+		p += gettoken(p, &token2);
+		if (token2.type == INSTRUCTION) {
 			symbolInsert(token.string, ic, ATTR_CODE);
+			token = token2;
 		}
-		else if (token.type == DIRECTIVE && 0 == strcmp("data", token.string) || 0 == strcmp("string", token.string)) {
+		else if (token2.type == DIRECTIVE && 0 == strcmp("data", token2.string) || 0 == strcmp("string", token2.string)) {
 			symbolInsert(token.string, dc, ATTR_DATA);
+			token = token2;
 		}
 	}
 
@@ -130,7 +133,10 @@ void processLine(char line[], int pass)
 			// TODO: Handle .entry directive.
 		}
 		else if (0 == strcmp("extern", token.string)) {
-			// TODO: Handle .extern directive.
+			Token token2;
+			p += gettoken(p, &token2);
+			symbolInsert(token2.string, 1, ATTR_EXTERNAL);
+			
 		}
 		else {
 			// TODO: Error: unknown directive.
@@ -138,23 +144,36 @@ void processLine(char line[], int pass)
 
 	}
 	else if (token.type == INSTRUCTION) {
-		int nwords = 1, i;
+		int i,nwords = 1;
 
-		code[ic - 100] = getOpcodeAndFunct(token.string);
-
+		code[ic-100] = getOpcodeAndFunct(token.string);
+		ic++;
 		if (pass == 1) printf("%07d %08o\n", ic, code[ic - 100]);
 
 		if (icCount(token) == 1) {
 			Token token2;
 			p += gettoken(p, &token2);
 			if (token2.type == IMMEDIATE) {
-				code[nwords] = (token2.number << 3)|4;
-				nwords++;
+
+				code[ic-100] = (token2.number << 3)|4;
+				ic++;
 			}  
-			if (token2.type == LABELREF) {
+			if (token2.type == LABELREF|| token2.type == RELATIVE) {
+				int k = 1;
+				SymbolAttributes b = 1;
+				if (symbolLookup(token2.string, &k, &b)) {
+					if (b == 1) {
+						code[ic - 100] = k;
+						ic++;
+					}
+					if (b == ATTR_DATA) {
+						data[dc++] = k;
+					}
+				}
+			
+				
 			}  
-			if (token2.type == RELATIVE) {
-			}
+			
 		}
 		else if (icCount(token) == 2) {
 			int i = 2;
@@ -163,18 +182,36 @@ void processLine(char line[], int pass)
 				p += gettoken(p, &token2);
 				while (token2.type == COMMA)
 					p += gettoken(p, &token2);
+				if (token2.type == IMMEDIATE) {
+					code[ic - 100] = (token2.number << 3) | 4;
+					ic++;
+				}
+				if (token2.type == LABELREF || token2.type == RELATIVE) {
+					int k = 1;
+					SymbolAttributes b = 1;
+					if (symbolLookup(token2.string, &k, &b)) {
+						//if (b == 1) {
+							code[ic - 100] = k;
+							ic++;
+						//}
+						//if (b == ATTR_DATA) {
+							//code[ic - 100] = k;
+							//ic++;
+						//}
+					}
+				}
+
 				i--;
 			}
 
 		}
 
 		if (pass == 1) {
-			for (i = 1; i < nwords; i++) {
-				printf("%07d %08o\n", ic + i, code[ic + i - 100]);
+			for (i =0; i+100< ic-1; i++) {
+				printf("%07d %08o\n", ic + i, code[i]);
 			}
 		}
 
-		ic += nwords;
 	}
 
 }
@@ -214,7 +251,7 @@ int main(int argc, char *argv[]) {
 				}
 			}
 
-			icf = ic;
+			icf = ic-1;
 			dcf = dc;
 
 			printf("------ Symbols ------\n");

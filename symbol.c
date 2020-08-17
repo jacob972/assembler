@@ -19,10 +19,6 @@ void symbolInsert(const char *name, int value, SymbolAttributes attr)
 	else {
 		symbol->link = head;
 		head = symbol;
-		/// Node *current = head;
-		//while (current->link)
-			//current = current->link;
-		//temp = current->link;
 	}
 
 
@@ -45,7 +41,12 @@ int symbolLookup(const char *name, int *value, SymbolAttributes *attr)
 {
 	Node *symbol = head;
 	while (symbol) {
-		if (0 == strcmp(symbol->name, name)) {
+		//strcat(name, ":")
+		//if (0 == strcmp(symbol->name, strcat(name, ":"))) {
+			
+		//}
+		
+		if ( 0 == strcmp(symbol->name, name)) {
 			*value = symbol->value;
 			*attr = symbol->attr;
 			return 1;
